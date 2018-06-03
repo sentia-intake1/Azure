@@ -1,0 +1,145 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"AzureRegion": {
+			"type": "string",
+			"allowedValues": [
+				"westeurope",
+				"northeurope",
+				"southfrance"
+			],
+			"defaultValue": "westeurope",
+			"metadata": {
+				"description": "The geographic location to group resources in"
+			}
+		},
+		"company": {
+			"type": "string",
+			"minLength": 3,
+			"maxLength": 11,
+			"defaultValue": "company",
+			"metadata": {
+				"description": "The value to use for starting the storage account name. Use only lowercase letters and numbers."
+			}
+		},
+		"Environment": {
+			"type": "string",
+			"allowedValues": [
+				"Dev",
+				"Accept",
+				"Test",
+				"Prod"
+			],
+			"defaultValue": "Test",
+			"metadata": {
+				"description": "The environment in which to deploy this resourcegroup"
+			}
+		},
+		"storageSKU": {
+			"type": "string",
+			"allowedValues": ["Standard_LRS", "Standard_ZRS", "Standard_GRS"],
+			"defaultValue": "Standard_LRS",
+			"metadata": {
+				"description": "The type of replication to use for the storage account."
+			}
+		},
+		"StorageEncryption": {
+			"type": "bool",
+			"defaultValue": false
+		},
+		"SupernetAddressPrefix": {
+			"type": "string",
+			"defaultValue": "172.16.0.0/12"
+		},
+		"SubnetCount": {
+			"type": "int",
+			"minValue": 1,
+			"maxValue": 32
+		},
+		"SubnetName": {
+			"type": "string",
+			"maxLength": 8,
+			"defaultValue": "Subnet"
+		},
+		"EnableDdosProtection": {
+			"type": "bool",
+			"defaultValue": false
+		}
+	},
+	"variables": {
+		"storageAccountName": "[concat(toLower(parameters('company')), uniqueString(resourceGroup().id))]",
+		"Application": "Intake",
+		"SuperNetName": "[concat(toLower(parameters('company')), '-SuperNet')]",
+		"SupernetCIDR" : "[split(parameters('SupernetAddressPrefix'),'/')]",
+		"SupernetIPRange": "[replace(parameters('SupernetAddressPrefix'),variables('SupernetCIDR'),'')]",
+		"SubnetRange": "[replace(variables('SupernetIPRange'),'.0.','.counter.')]",
+		"SubnetCIDR": "[concat(toLower(variables('SubnetRange')), '/24')]"
+	},
+	"resources": [
+		{
+			"name": "[variables('storageAccountName')]",
+			"type": "Microsoft.Storage/storageAccounts",
+			"apiVersion": "2017-10-01",
+			"sku": {
+				"name": "[parameters('storageSKU')]"
+			},
+			"kind": "StorageV2",
+			"location": "[parameters('AzureRegion')]",
+			"tags": {
+				"Company": "[parameters('company')]",
+				"Environment": "[parameters('Environment')]",
+				"Application": "[variables('Application')]"
+			},
+			"properties": {
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": false,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "enabled": "[parameters('StorageEncryption')]"
+                        },
+                        "blob": {
+                            "enabled": "[parameters('StorageEncryption')]"
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            },
+		},
+		{
+			"type": "Microsoft.Network/virtualNetworks",
+			"name": "[variables('SuperNetName')]",
+			"apiVersion": "2018-02-01",
+			"location": "[parameters('AzureRegion')]",
+			"properties": {
+				"addressSpace": {
+					"addressPrefixes": [
+						"[parameters('SupernetAddressPrefix')]"
+					]
+				},
+				"copy": [
+					{
+						"name": "subnets",
+						"count": "[parameters('SubnetCount')]",
+						"mode": "serial",
+                		"batchSize": 1,
+						"input": {
+							"name": "[concat(parameters('SubnetName'), copyIndex('subnets'))]",
+							"properties": {
+								"addressPrefix": "[replace(variables('SubnetCIDR'),'counter',copyIndex('subnets'))]",
+								"enableDdosProtection": "[parameters('enableDdosProtection')]"
+							}
+						}
+					}
+				]
+			}
+		}
+	]
+}
