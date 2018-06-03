@@ -1,0 +1,62 @@
+start-assignment: 27/05/2018 19u30
+
+	create Azure account
+	Install-Module -Name AzureRM -AllowClobber
+	#load module
+	Import-Module -Name AzureRM
+	#connect to West Europe environment
+	Connect-AzureRmAccount
+
+	MS docs : https://docs.microsoft.com/en-us/powershell/module/azurerm.resources/new-azurermresourcegroup?view=azurermps-6.1.0
+	Azure Quick start : https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=portal
+	Resource Manager : https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-authoring-templates
+	Storage account : https://docs.microsoft.com/en-us/powershell/module/azure/new-azurestorageaccount?view=azuresmps-4.0.0
+
+pause assignment: 27/05/2018 21u00
+
+resume assignment: 29/05/2018 20u20
+
+	deploy resource group templates : https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-template-deploy
+	validate templates : https://docs.microsoft.com/en-us/azure/azure-stack/user/azure-stack-validate-templates
+
+pause assignment: 29/05/2018 22u10
+
+resume assignment: 01/06/2018 15u00
+
+	manual setup thru Azure Portal and export to JSON templates
+	create network : networksecuritygroup + virtual network + subnet(s)
+	copy loop resource in json template + dynamic subnet naming thru variables
+
+pause assignment: 01/06/2018 16u30
+
+resume assignment: 02/06/2018 11u00
+
+	writing deployment and parameter json template(s)
+
+pause assignment: 02/06/2018 12u30
+
+resume assignment: 03/06/2018 16u00
+
+	review linked templates : https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview
+	review policy definitions : https://docs.microsoft.com/en-us/azure/azure-policy/azure-policy-introduction#policy-definition-structure
+	not implemented : 
+		$definition = New-AzureRmPolicyDefinition -Name "allowed-resourcetypes" -DisplayName "Allowed resource types" -description "Allowed ResourceTypes to deploy." -Policy $PolicyRulesTemplate -Parameter $PolicyParamatersTemplate -Mode All
+		$assignment = New-AzureRMPolicyAssignment -Name $assignmentname -Scope $scope -listOfResourceTypesAllowed $AllowedResourceTypes -PolicyDefinition $definition
+		$Policy = Get-AzureRmPolicyDefinition -Id "/providers/Microsoft.Authorization/policyDefinitions/a08ec900-254a-4555-9bf5-e42af04b5c5c"
+		
+			Name               : a08ec900-254a-4555-9bf5-e42af04b5c5c
+			ResourceId         : /providers/Microsoft.Authorization/policyDefinitions/a08ec900-254a-4555-9bf5-e42af04b5c5c
+			ResourceName       : a08ec900-254a-4555-9bf5-e42af04b5c5c
+			ResourceType       : Microsoft.Authorization/policyDefinitions
+			Properties         : @{displayName=Allowed resource types; policyType=BuiltIn; description=This policy enables you to specify the resource types that your organization can deploy.; metadata=; parameters=; policyRule=}
+			PolicyDefinitionId : /providers/Microsoft.Authorization/policyDefinitions/a08ec900-254a-4555-9bf5-e42af04b5c5c
+
+		$AllowedResourceTypes = @{"listOfResourceTypesAllowed"= @("Microsoft.Storage","Microsoft.Network","Microsoft.Compute")}
+		New-AzureRmPolicyAssignment -Name "OnlyStorageNetworkAndCompute" -PolicyDefinition $Policy -Scope $ResourceGroup.ResourceId -PolicyParameterObject $AllowedResourceTypes
+		New-AzureRmPolicyAssignment -Name "OnlyStorageNetworkAndCompute" -PolicyDefinition $Policy -Scope $ResourceGroup.ResourceId -PolicyParameter $PolicyParamatersTemplate
+		
+	debug script
+	test run manual input parameters
+	upload files to temp github account 
+	
+stop-assignment 03/06/2018 20u40
